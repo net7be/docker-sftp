@@ -19,7 +19,23 @@ docker stop <CONTAINER_NAME>
 # Adding user accounts
 We're just adding regular system accounts and specifying their home directory to be inside the mounted SFTP_DIRECTORY_ROOT.
 
-You have to handle the permissions yourselves by matching the UID/GUID from the container with the acutal ones from the hosts and the mounted directory.
+You have to handle the permissions yourselves by matching the UID/GID from the container with the acutal ones from the hosts and the mounted directory.
+
+First, get a shell session on the container (it has to be running):
+```
+docker exec -it <CONTAINER_NAME> /bin/sh
+```
+
+Then create a user with the right UID and GID:
+```
+addgroup --gid <GID> <GROUP_NAME>
+adduser -h <CHROOT_DIRECTORY> -H -u <UID> -G <GROUP_NAME> <USER_NAME>
+```
+
+Some extra chroot security restrictions are enforced by OpenSSH: The root of the chroot (which is the user home directory) **cannot** belong to that user or be writable by said user. You should just give it to root and make it readable.
+
+You should then create a directory inside the chroot, and give that one to the user (can be done on the host or in a shell on the container) - That directory is the actual SFTP directory for that user.
+
 
 # Making it run when system boots up
 Adding `--restart=always` to the `docker run` command should do it.
