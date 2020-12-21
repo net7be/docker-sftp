@@ -1,0 +1,14 @@
+Port 22
+
+UseDNS no
+
+PermitRootLogin no
+X11Forwarding no
+AllowTcpForwarding no
+AllowAgentForwarding no
+PermitTunnel no
+
+# Force sftp and chroot jail
+Subsystem sftp internal-sftp
+ForceCommand internal-sftp
+ChrootDirectory %h
