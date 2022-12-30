@@ -19,7 +19,7 @@ read -p "User name: " USER_NAME
 echo ""
 echo "The chroot has to be **one level below** the actual home directory"
 read -p "User chroot directory: " USER_ROOT
-[[ ! -d $USER_ROOT ]] && exit_error "The directory doesn't exist."
+[[ ! -d $USER_ROOT ]] && exit_error "$USER_ROOT doesn't exist on the container."
 
 # Check that the directory doesn't belong to that user or group
 # And isn't world writable, print a warning if it is.
@@ -35,5 +35,9 @@ if [[ $DIR_UID -eq $USER_ID ]] || [[ $DIR_GID -eq $USER_ID ]]; then
 fi
 [[ $PERMS_ALL -gt 5 ]] && exit_error "$USER_ROOT is world writable, can't use such a directory as chroot"
 
+set +e
 addgroup --gid $USER_ID "$USER_NAME"
+set -e
 adduser -h "$USER_ROOT" -H -u $USER_ID -G "$USER_NAME" "$USER_NAME"
+
+echo "User $USER_NAME has been created on the container."
