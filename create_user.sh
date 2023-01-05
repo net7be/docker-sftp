@@ -26,9 +26,11 @@ read -p "User chroot directory: " USER_ROOT
 DIR_UID=$(stat -c "%u" "$USER_ROOT")
 DIR_GID=$(stat -c "%g" "$USER_ROOT")
 PERMS_ALL=$(stat -c "%a" "$USER_ROOT" | tail -c 2)
-if [[ $DIR_UID -eq $USER_ID ]] || [[ $DIR_GID -eq $USER_ID ]]; then
-  echo "WARNING: the provided chroot belongs to the provided user ID or group ID"
+if [[ $DIR_UID != 0 ]] || [[ $DIR_GID != 0 ]]; then
+  echo "WARNING: the provided chroot doesn't belong to root."
   echo "OpenSSH might refuse connections to such a chroot."
+  echo "both user and group owners have to be root."
+  echo "If you change the permissions, DO NOT DO IT RECURSIVELY."
   read -p "Continue? [y/N]"
   [[ "$REPLY" != "y" ]] && exit 0
   echo ""
