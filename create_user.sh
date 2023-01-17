@@ -37,9 +37,20 @@ if [[ $DIR_UID != 0 ]] || [[ $DIR_GID != 0 ]]; then
 fi
 [[ $PERMS_ALL -gt 5 ]] && exit_error "$USER_ROOT is world writable, can't use such a directory as chroot"
 
-set +e
-addgroup --gid $USER_ID "$USER_NAME"
-set -e
-adduser -h "$USER_ROOT" -H -u $USER_ID -G "$USER_NAME" "$USER_NAME"
+# TODO adduser doesn't allow duplicate UIDs.
+# I need to run usermod afterwards in that case.
+
+# Check if a group already exists with the ID = User ID
+GR=$(getent group $USER_ID)
+if [[ $? -gt 0 ]]; then
+  # Create both group and user:
+  addgroup --gid $USER_ID "$USER_NAME"
+  adduser -h "$USER_ROOT" -H -u $USER_ID -G "$USER_NAME" "$USER_NAME"
+else
+  # The gid is already in use, get the name of the group and use that
+  # to create the user:
+  GR_NAME=$(echo "$GR" | cut -d: -f 1)
+  adduser -h "$USER_ROOT" -H -u $USER_ID -G "$GR_NAME" "$USER_NAME"
+fi
 
 echo "User $USER_NAME has been created on the container."
