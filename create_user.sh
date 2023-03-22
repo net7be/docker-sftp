@@ -37,24 +37,36 @@ if [[ $DIR_UID != 0 ]] || [[ $DIR_GID != 0 ]]; then
 fi
 [[ $PERMS_ALL -gt 5 ]] && exit_error "$USER_ROOT is world writable, can't use such a directory as chroot"
 
-# TODO adduser doesn't allow duplicate UIDs.
-# I need to run usermod afterwards in that case.
-
 # Check if a group already exists with the ID = User ID
+# Also check if the user ID already exists
 set +e
 GR=$(getent group $USER_ID)
-if [[ $? -gt 0 ]]; then
-  # Create both group and user:
-  set -e
+GETUID=$(getent passwd $USER_ID)
+set -e
+GR_NAME="$USER_NAME"
+if [[ -z "$GR" ]]; then
+  # Create group:
   addgroup --gid $USER_ID "$USER_NAME"
-  adduser -h "$USER_ROOT" -H -u $USER_ID -G "$USER_NAME" "$USER_NAME"
 else
-  # The gid is already in use, get the name of the group and use that
-  # to create the user with a new user ID,
-  # THEN usermod to change the user ID to what we want.
-  set -e
+  # The gid is already in use, get the name of the group to use
+  # later when creating the user:
   GR_NAME=$(echo "$GR" | cut -d: -f 1)
+fi
+
+# Check if user ID already exists because we need to jump some
+# hoops in that case:
+if [[ -z "$GETUID" ]]; then
+  # User ID doesn't exist yet:
   adduser -h "$USER_ROOT" -H -u $USER_ID -G "$GR_NAME" "$USER_NAME"
+else
+  echo "Please note: the user ID already exists"
+  echo "Adding another user with the same UID..."
+  # User ID exists, letting adduser pick one:
+  adduser -h "$USER_ROOT" -H -G "$GR_NAME" "$USER_NAME"
+  # Get that user ID:
+  NUID=$(getent passwd "$USER_NAME" | cut -d: -f 3)
+  # Change it:
+  usermod -o -u $USER_ID "$USER_NAME"
 fi
 
 echo "User $USER_NAME has been created on the container."
