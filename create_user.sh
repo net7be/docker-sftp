@@ -41,14 +41,18 @@ fi
 # I need to run usermod afterwards in that case.
 
 # Check if a group already exists with the ID = User ID
+set +e
 GR=$(getent group $USER_ID)
 if [[ $? -gt 0 ]]; then
   # Create both group and user:
+  set -e
   addgroup --gid $USER_ID "$USER_NAME"
   adduser -h "$USER_ROOT" -H -u $USER_ID -G "$USER_NAME" "$USER_NAME"
 else
   # The gid is already in use, get the name of the group and use that
-  # to create the user:
+  # to create the user with a new user ID,
+  # THEN usermod to change the user ID to what we want.
+  set -e
   GR_NAME=$(echo "$GR" | cut -d: -f 1)
   adduser -h "$USER_ROOT" -H -u $USER_ID -G "$GR_NAME" "$USER_NAME"
 fi
