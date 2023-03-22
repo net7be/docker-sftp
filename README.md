@@ -17,6 +17,16 @@ docker stop <CONTAINER_NAME>
 ```
 
 # Adding user accounts
+
+There is a helper script on the container, use at your own risk as it allows duplicate UIDs (something we wanted to be able to do) and may assign users to already existing groups:
+
+```
+docker exec -it <CONTAINER_NAME> create_user.sh
+```
+The script is interactive and will stop on error.
+
+## Adding users manually
+
 We're just adding regular system accounts and specifying their home directory to be inside the mounted SFTP_DIRECTORY_ROOT.
 
 You have to handle the permissions yourselves by matching the UID/GID from the container with the acutal ones from the hosts and the mounted directory.
